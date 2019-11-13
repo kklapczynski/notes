@@ -64,4 +64,164 @@ Components are directives with a template.
     <app-server *ngFor="let server of servers"></app-server>
     <div *ngFor="let logItem of log; let i = index">{{ logItem }}</div>
    ```
-- 
+- __ng_content__ - hook in child component html to allow placing html content inside component tags ()of this child component) in html of parent component
+
+   - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656100#bookmarks
+   - child component: server-element
+   ```html
+      <div
+         class="panel panel-default">
+         <div class="panel-heading">{{ element.name }}</div>
+         <div class="panel-body">
+            <ng-content></ng-content>
+            <!-- <p>
+            <strong *ngIf="element.type === 'server'" style="color: red">{{ element.content }}</strong>
+            <em *ngIf="element.type === 'blueprint'">{{ element.content }}</em>
+            </p> -->
+         </div>
+      </div>
+   ```
+   - parent component: app
+   ```html
+      <div class="row">
+         <div class="col-xs-12">
+            <app-server-element 
+            *ngFor="let element of serverElements"
+            [srvElement]="element"
+            >
+            <p>
+               <strong *ngIf="element.type === 'server'" style="color: red">{{ element.content }}</strong>
+               <em *ngIf="element.type === 'blueprint'">{{ element.content }}</em>
+            </p>
+            </app-server-element>
+         </div>
+      </div>
+   ```
+## Decorators
+
+- __@Input(optional alias)__ - makes property of component accessible for parent component, that is instantiating component with property decorated with @Input; alias to be used for property binding in parent element; parent component can bind to child component property and change it = assign value to it
+
+   ```TS
+      @Component({
+         selector: 'app-server-element',
+         templateUrl: './server-element.component.html',
+         styleUrls: ['./server-element.component.css']
+         })
+         export class ServerElementComponent implements OnInit {
+         @Input('srvElement') element: {name: string, type: string, content: string};
+
+         constructor() { }
+
+         ngOnInit() {
+         }
+
+         }
+   ```
+   ```html
+      <div class="col-xs-12">
+         <app-server-element 
+         *ngFor="let element of serverElements"
+         [srvElement]="element"
+         ></app-server-element>
+      </div>
+   ```
+
+- __@Output(optional alias)__ - makes property of child component emittable = parent component can bind to __CUSTOM EVENT__ emitted from child component
+
+   ```TS
+      export class CockpitComponent implements OnInit {  // child component
+         @Output() serverCreated = new EventEmitter<{serverName: string, serverContent: string}>();
+         @Output('bpc') blueprintCreated = new EventEmitter<{serverName: string, serverContent: string}>();
+
+         newServerName = '';
+         newServerContent = '';
+         
+
+         onAddServer() {
+            this.serverCreated.emit({serverName: this.newServerName, serverContent: this.newServerContent});
+         }
+
+         onAddBlueprint() {
+            this.blueprintCreated.emit({serverName: this.newServerName, serverContent: this.newServerContent});
+         }
+   ```
+   app.component.html - parent component
+   ```html
+      <div class="row">
+         <div class="col-xs-12">
+            <app-cockpit 
+            (serverCreated)="onServerAdded($event)"
+            (bpc)="onBlueprintAdded($event)"
+            ></app-cockpit>
+         </div>
+      </div>
+   ```
+- __@ViewChild()__ - returns ElementRef with nativeElement property; lets us get html el. by local ref. or Component name to use it in TS code
+
+   - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656094#bookmarks
+
+   ```TS
+      @ViewChild('serverContentInput', {static: true}) serverContentInput: ElementRef;  // 1. arg: local reference or component name; {static: true} - nedded to use serverContentInput in ngOnInit()
+
+      onAddServer(serverNameInput: HTMLInputElement) {
+         // console.log(this.serverContentInput.nativeElement.value);
+         this.serverCreated.emit({serverName: serverNameInput.value, serverContent: this.serverContentInput.nativeElement.value});
+  }
+   ```
+
+   ```html
+      <input 
+         type="text"
+         class="form-control"
+         #serverContentInput>
+   ```
+## @Component properties
+
+- encapsulation : styles separation per component
+
+```TS
+   import { Component, OnInit, Input, ViewEncapsulation } from '@angular/core';
+
+   @Component({
+   selector: 'app-server-element',
+   templateUrl: './server-element.component.html',
+   styleUrls: ['./server-element.component.css'],
+   encapsulation: ViewEncapsulation.None // view is not encapsulated - CSS of this component is global , default option: Emulated - this component's CSS is valid only for its html, other is : Native  - ?
+   })
+```
+
+## Local reference in template
+
+```HTML
+   <p>Add new Servers or blueprints!</p>
+   <label>Server Name</label>
+   <!-- <input type="text" class="form-control" [(ngModel)]="newServerName"> -->
+   <input 
+      type="text" 
+      class="form-control"
+      #serverNameInput>    <!-- local ref. can be used ONLY in template and holds the whole html element, but can be passed as argument and used then inside ts code-->
+   <label>Server Content</label>
+   <!-- <input type="text" class="form-control" [(ngModel)]="newServerContent"> -->
+   <input 
+      type="text"
+      class="form-control"
+      #serverContentInput>
+   <br>
+   <button
+      class="btn btn-primary"
+      (click)="onAddServer(serverNameInput, serverContentInput)">Add Server</button>
+   <button
+      class="btn btn-primary"
+      (click)="onAddBlueprint(serverNameInput, serverContentInput)">Add Server Blueprint</button>
+```
+
+## Angular lifecycle
+- https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656102#bookmarks
+- __ngOnChanges__ - called after a bound input property changes
+- __ngOnInit__    - called once the component is initialized
+- __ngDoCheck__   - called during every change detection run, even when no change occured
+- __ngAfterContentInit__   - called after content (ng-content) has been projected into view
+- __ngAfterContentChecked__- called when projected content has been checked
+- __ngAfterViewInit__      - called after the component's view has benn inintialized
+- __ngAfterViewChecked__   - called every time the view has been checked
+- __ngOnDestroy__          - called once the component is about to be removed from DOM (e.g. with *ngIf)
