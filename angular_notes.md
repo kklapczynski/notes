@@ -41,12 +41,45 @@ In @Component selectors may be defined as in CSS:
 ## Directives
 Directives are instructions in the DOM.
 Components are directives with a template.
+- _STRUCTURAL DIRECTIVES_: * marks structural directive - changes structure of DOM: adds or removes elements; cannot have 2 structural directives on element :
 
-- __*ngIf__  ( * marks structural directive - changes structure of DOM: adds or removes elements )
+   - __*ngIf__
 
-   ```html
-    <p *ngIf="this.isServerCreated">Server >>> {{this.serverName}} <<< was created.</p>
-   ```
+      ```html
+      <p *ngIf="this.isServerCreated">Server >>> {{this.serverName}} <<< was created.</p>
+      ```
+      - __*ngIf__ with __else__ and __ng-template__ with __local reference__
+      ```html
+         <div class="col-md-7">
+         <app-recipes-details 
+               *ngIf="selectedRecipe; else infoText"
+               [recipe]="selectedRecipe"
+         ></app-recipes-details>
+         <ng-template #infoText>
+               <p>Please select recipe.</p>
+         </ng-template>
+      </div>
+      ```
+   - __*ngFor__ - loops through an array to add multiple elements
+
+      ```html
+      <app-server *ngFor="let server of servers"></app-server>
+      <div *ngFor="let logItem of log; let i = index">{{ logItem }}</div>
+      ```
+   - __*ngSwitchCase__ and __*ngSwitchDefault__ use with __[ngSwitch]="case_value"__
+      
+      ```html
+         <button class="btn btn-primary" (click)="changeValue(value)">Change value</button>
+         <div [ngSwitch]="value">
+            <p *ngSwitchCase="1">Value is {{ value }}</p>
+            <p *ngSwitchCase="5">Value is {{ value }}</p>
+            <p *ngSwitchCase="10">Value is {{ value }}</p>
+            <p *ngSwitchCase="15">Value is {{ value }}</p>
+            <p *ngSwitchCase="100">Value is {{ value }}</p>
+            <p *ngSwitchDefault>Value is default</p>
+         </div>
+      ```
+
 - __ngStyle__ - dynamically change style of elements
 
    ```html
@@ -58,12 +91,7 @@ Components are directives with a template.
     <p 
     [ngClass]="{'online': isOnline()}"
    ```
-- __*ngFor__ - loops through an array to add multiple elements
 
-   ```html
-    <app-server *ngFor="let server of servers"></app-server>
-    <div *ngFor="let logItem of log; let i = index">{{ logItem }}</div>
-   ```
 - __ng_content__ - hook in child component html to allow placing html content inside component tags ()of this child component) in html of parent component
 
    - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656100#bookmarks
@@ -96,6 +124,23 @@ Components are directives with a template.
             </app-server-element>
          </div>
       </div>
+   ```
+
+- ### __Custom directives__
+   ```ts
+      import { Directive, Renderer2, OnInit, ElementRef } from '@angular/core';
+
+      @Directive({
+      selector: '[appBetterHighlight]'
+      })
+      export class BetterHighlightDirective implements OnInit {
+         // better - more universal (for Service Workers e.g) approach is to not set style of a DOM element directly (as in basic-highlight), but using Renderer2
+         constructor(private el: ElementRef, private renderer: Renderer2) { }
+
+         ngOnInit() {
+            this.renderer.setStyle(this.el.nativeElement, 'background-color', 'lightblue');
+         }
+      }
    ```
 ## Decorators
 
@@ -175,6 +220,58 @@ Components are directives with a template.
          class="form-control"
          #serverContentInput>
    ```
+- __@ContentChild()__ - gives access to content (of child component) added in parent component
+   - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656114#bookmarks
+   - server-element.component.ts - child component of app.component
+   ```TS
+      @ContentChild('paragraphContent', {static: false}) paragraph: ElementRef; // gives access to content of child component added in parent component => local reference 'paragraphContent' is defined in app.component.html and is not available for @ViewChild()
+   ```
+   - app.component.html
+   ```html
+      <app-server-element 
+        *ngFor="let element of serverElements"
+        [srvElement]="element"
+        [name]="element.name"
+      >
+        <p #paragraphContent>
+          <strong *ngIf="element.type === 'server'" style="color: red">{{ element.content }}</strong>
+          <em *ngIf="element.type === 'blueprint'">{{ element.content }}</em>
+        </p>
+      </app-server-element>
+   ```
+- __@HostBinding__ bind directive property with property of host element = el. with directive as an attribute
+- __@HostListener__ - sets up event listener on elem.
+   ```ts
+      import { Directive, Renderer2, OnInit, ElementRef, HostListener, HostBinding } from '@angular/core';
+
+   @Directive({
+   selector: '[appBetterHighlight]'
+   })
+   export class BetterHighlightDirective implements OnInit{
+      // better - more universal (for Service Workers e.g) approach is to not set style of a DOM element directly (as in basic-highlight), but using Renderer2
+      // constructor(private el: ElementRef, private renderer: Renderer2) { }
+
+      ngOnInit() {
+         // this.renderer.setStyle(this.el.nativeElement, 'background-color', 'lightblue');
+      }
+
+      @HostBinding('style.backgroundColor') backgroundColor: string = 'transparent';
+
+      // add interactivity: chnage background-color when hovering over element, that has directive as an attribute
+      @HostListener('mousemove') onMouseEnter(eventData: Event) {
+         // this.renderer.setStyle(this.el.nativeElement, 'background-color', 'lightblue');
+         this.backgroundColor = 'lightblue';
+      }
+
+      @HostListener('mouseout') onMouseLeave(eventData: Event) {
+         // this.renderer.setStyle(this.el.nativeElement, 'background-color', 'transparent');
+         this.backgroundColor = 'transparent';
+      }
+   }
+
+   ```
+
+
 ## @Component properties
 
 - encapsulation : styles separation per component
@@ -218,10 +315,12 @@ Components are directives with a template.
 ## Angular lifecycle
 - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/6656102#bookmarks
 - __ngOnChanges__ - called after a bound input property changes
+   - reacts ONLY to changes of properties: if property holds an object it holds reference to object in memory - change of it doesn't change the reference,
+     that is why when we change value on object, property that we want to check for changes needs to hold primitive, cause it changes with change of value of referenced object value
 - __ngOnInit__    - called once the component is initialized
 - __ngDoCheck__   - called during every change detection run, even when no change occured
 - __ngAfterContentInit__   - called after content (ng-content) has been projected into view
 - __ngAfterContentChecked__- called when projected content has been checked
-- __ngAfterViewInit__      - called after the component's view has benn inintialized
+- __ngAfterViewInit__      - called after the component's view has been inintialized
 - __ngAfterViewChecked__   - called every time the view has been checked
-- __ngOnDestroy__          - called once the component is about to be removed from DOM (e.g. with *ngIf)
+- __ngOnDestroy__          - called once the component is about to be removed from DOM (e.g. with)
