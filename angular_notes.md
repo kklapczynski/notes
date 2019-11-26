@@ -324,3 +324,89 @@ Components are directives with a template.
 - __ngAfterViewInit__      - called after the component's view has been inintialized
 - __ngAfterViewChecked__   - called every time the view has been checked
 - __ngOnDestroy__          - called once the component is about to be removed from DOM (e.g. with)
+
+## SERVICES
+Used for communication between components. Proper use by:
+   -  including in __providers__ property od __@Component__ decorator
+   -  injecting it as parameter of __constructor()__
+   -  NOT instantiating "by hand" = serviceInstance = new Service();
+   -  example:
+   ```ts
+      import { Component, EventEmitter, Input, Output } from '@angular/core';
+      import { LoggingService } from '../logging.service';
+      import { AccountsService } from '../accounts.service';
+
+      @Component({
+         selector: 'app-account',
+         templateUrl: './account.component.html',
+         styleUrls: ['./account.component.css'],
+         providers: [LoggingService, AccountsService]
+      })
+
+      export class AccountComponent {
+         @Input() account: {name: string, status: string};
+         @Input() id: number;
+
+         constructor(private loggingService: LoggingService, private accountsService: AccountsService) {}
+
+         onSetTo(status: string) {
+            this.accountsService.onStatusChanged(this.id, status);
+            this.loggingService.logStatus(status);
+         }
+      }
+   ```
+
+   -  HIERARCHICAL INJECTOR - reach of injected service depends on injection level in __providers__ property of @Component:
+      -  __AppModule__:           __The same instance__ of Service is available in __whole app__ (all components and all services)
+         - or by decorating service with:
+         ```ts
+            @Injectable({
+               providedIn: 'root'   // this way or by adding service in app.module.ts in providers we make service app-wide available
+            })                      // Services can be loaded lazily by Angular (behind the scenes) and redundant code can be removed automatically. This can lead to a better performance and loading speed
+         ```
+      -  __AppComponent__:        __The same instance__ of Service is available for __all Components__ (but not for services)
+      -  __Any other Component__: __The same instance__ of Service is available for __the Component and all its child components__ and overwrites the same service provided on higher level
+      -  prevent above mentioned overwriting by removing service from __providers__ property, still need it in __constructor()__ as __private__ parameter
+
+## ROUTING
+
+   -  register routes in app.modules.ts:
+   ```ts
+      ...
+      import { RouterModule, Routes } from '@angular/router';
+      ...
+      const appRoutes = [
+         { path: '', component: HomeComponent },
+         { path: 'users', component: UsersComponent },
+         { path: 'servers', component: ServersComponent }
+      ]
+
+      @NgModule({ 
+         ...
+         imports: [
+            BrowserModule,
+            FormsModule,
+            RouterModule.forRoot(appRoutes)
+         ], 
+   ```
+
+   - location for router with __router-outlet__ directive  in html - app.component.html:
+   ```html
+      <div class="row">
+         <div class="col-xs-12 col-sm-10 col-md-8 col-sm-offset-1 col-md-offset-2">
+            <router-outlet></router-outlet>
+         </div>
+      </div>
+   ```
+   - navigation with __routerLink__ directive - ensures no refresh of site: it's faster and keeps the state of app:
+   ```html
+      <ul class="nav nav-tabs">
+        <li role="presentation" class="active"><a routerLink="/">Home</a></li>
+        <li role="presentation"><a routerLink="/servers">Servers</a></li>
+        <li role="presentation"><a [routerLink]="['/users']">Users</a></li>
+      </ul>
+   ```
+      -  "/" ensures absolute path usage
+      -  without "/" or "./" : relative path is used - string is appended to current url path
+      -  "../../" : relative - go back 2 (or less or more) segments and then append string provided
+      -  above start always from current path - path at which component.html including routerLink, that we define, is
