@@ -389,6 +389,43 @@ Used for communication between components. Proper use by:
             RouterModule.forRoot(appRoutes)
          ], 
    ```
+   - nest routes: child routes need to have router-outlet in parent html
+   ```TS
+      const appRoutes = [
+         { path: '', component: HomeComponent },
+         { path: 'users', component: UsersComponent, children: [
+            { path: ':id/:name', component: UserComponent }, // 'id' custom specified name, that can be retrieved inside component; ':' marks that this is dynamic part of path
+         ] },
+         { path: 'servers', component: ServersComponent, children: [
+            { path: ':id', component: ServerComponent },
+            { path: ':id/edit', component: EditServerComponent }
+         ] }
+      ]
+   ```
+   ```html
+      <!-- servers.component.html -->
+      <div class="row">
+         <div class="col-xs-12 col-sm-4">
+            <div class="list-group">
+               <a
+               [routerLink]="['/servers', server.id]"
+               [queryParams]="{allowEdit: server.id === 3 ? 1 : 0}"
+               fragment="loading"
+               class="list-group-item"
+               *ngFor="let server of servers">
+               {{ server.name }}
+               </a>
+            </div>
+         </div>
+         <div class="col-xs-12 col-sm-4">
+            <router-outlet></router-outlet>
+            <!-- <button class="btn btn-primary" (click)="onReload()">Reload</button>
+            <app-edit-server></app-edit-server>
+            <hr>
+            <app-server></app-server> -->
+         </div>
+      </div>
+   ```
 
    - location for router with __router-outlet__ directive  in html - app.component.html:
    ```html
@@ -401,12 +438,193 @@ Used for communication between components. Proper use by:
    - navigation with __routerLink__ directive - ensures no refresh of site: it's faster and keeps the state of app:
    ```html
       <ul class="nav nav-tabs">
-        <li role="presentation" class="active"><a routerLink="/">Home</a></li>
-        <li role="presentation"><a routerLink="/servers">Servers</a></li>
-        <li role="presentation"><a [routerLink]="['/users']">Users</a></li>
+        <li role="presentation" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/">Home</a></li>
+        <li role="presentation" routerLinkActive="active"><a routerLink="/servers">Servers</a></li>
+        <li role="presentation" routerLinkActive="active"><a [routerLink]="['/users']">Users</a></li>
       </ul>
    ```
       -  "/" ensures absolute path usage
       -  without "/" or "./" : relative path is used - string is appended to current url path
       -  "../../" : relative - go back 2 (or less or more) segments and then append string provided
       -  above start always from current path - path at which component.html including routerLink, that we define, is
+   - __routerLinkActive__ - see code above: adds class to element with active routerLink
+   - __[routerLinkActiveOptions]="{ exact: true }__ - ensures routerLinkActive works only on exact match, NOT when active link contains routerLink string
+   - __this.router.navigate(['/']);__ - programmatic navigation with Router injected into component class
+   - this.router.navigate(['server'], { relativeTo: this.route}); // with relativeTo property we can set a url=path, to which relative (without "/") path will be added
+   - this.route.snapshot.params['id'] - retrieves value of 'id' param from current path (url) - if this is palced in ngOnInit function, then it doesnt get updated on url change
+   - subscribe to route params to react to changes of params in url
+      ```ts
+         this.route.params.subscribe(
+            (params: Params) => {
+            this.user.id = params['id'];
+            this.user.name = params['name'];
+            }
+         )
+      ```
+   - ### Setting URL
+      - set path with routerLink property
+      - set query with queryParams property (part of URL after "?", params separeted by "&")
+      - set fragment with fragment property (last part of URL after "#")
+      - in html
+         ```html
+            <a
+               [routerLink]="['/servers', 1, 'edit']"
+               [queryParams]="{allowEdit: '1', allowAnything: '1'}"
+               fragment="loading"
+               class="list-group-item"
+               *ngFor="let server of servers">
+               {{ server.name }}
+            </a>
+         ```
+      - programmatically in TS with arguments of navigate method
+         ```TS
+            this.router.navigate(['/servers', id, 'edit'], { queryParams: {allowEdit: 1}, fragment: 'lalamido' });
+         ```
+      - navigate with keeping queryParams
+         ```TS
+            this.router.navigate(['edit'], {relativeTo: this.route, queryParamsHandling: 'preserve'});
+         ```
+
+   - ### Access control to routes ( https://github.com/kklapczynski/Udemy_Angular8_The-Complete-Guide__routing/tree/master/src/app )
+      - It's done with Guards - services that can restrict access to routes; app-routing.module.ts : appRoutes:
+      ```TS
+         { path: 'servers', 
+            // canActivate: [AuthGuard], // AuthGuard works for servers path and all its children
+            canActivateChild: [AuthGuard],  // AuthGuard works for servers children paths only
+            component: ServersComponent, 
+            children: [
+            { path: ':id', component: ServerComponent },
+            { path: ':id/edit', component: EditServerComponent }
+            ] 
+         },
+      ```
+      - auth-guard.service.ts:
+      ```TS
+         @Injectable()
+         export class AuthGuard implements CanActivate, CanActivateChild {
+            
+            constructor(private authService: AuthService, private router: Router) {}
+
+            canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+               return this.authService.isAuthenticated()
+                     .then(
+                        (authenticated: boolean) => {
+                           if(authenticated) {
+                                 return true;
+                           } else {
+                                 this.router.navigate(['/']);
+                                 return false;
+                           }
+                        }
+                     )
+            }
+
+            canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+               return this.canActivate(route, state);
+            }
+         }
+      ```
+      - control navigating away from route with CanDeactivate interface:
+         - app-routing.module.ts
+         ```TS
+         { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] } // CanDeactivateGuard implements CanDeactivate interface to decide if a route can be deactivated - navigated away from
+         ```
+         - can-deactivate-guard.service.ts:
+         ```TS
+            // to make this kind of guard reusable by any component, we need it to force component to have certain methods
+
+            export interface CanComponentDeactivate {
+               canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+            }
+
+            export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {  
+               // implementing CanDeactivate interface with component of type CanComponentDeactivate means this guard can be used only on components that implement CanComponentDeactivate interface
+               // which ensures that this component has canDeactivate method returning boolean (straight away or as result of Observable or Promise)
+
+               canDeactivate(                          // this canDeactivate() method will be called by the angular router once we try to leave the route
+                  component: CanComponentDeactivate,  // component that guard is tied to in app-routing.module
+                  currentRoute: ActivatedRouteSnapshot,
+                  currentState: RouterStateSnapshot,
+                  nextState?: RouterStateSnapshot) : Observable<boolean> | Promise<boolean> | boolean {   // "?" marks optional argument
+               
+                  return component.canDeactivate();   // with this angular router calls component's canDeactivate() method - if it returns true, navigation is allowed and follows
+                                                      // this ties component's canDeactivate method with the router - CanDeactivateGuard service introduced in app-routing.module.ts uses canDeactivate() method defined in component
+                                                      // mechanism of navigating is in Guard + Router, but logic for stoping navigation is in component
+               }
+            }
+         ```
+         - edit-server.component.ts
+         ```TS
+         export class EditServerComponent implements OnInit, CanComponentDeactivate {
+            ...
+            // other guards didn't need access to component's properties, but here it needs to check changesSaved and be provided as a service in app-routin.module
+            canDeactivate(): Observable<boolean> | Promise<boolean> | boolean {
+               if (!this.allowEdit) return true;
+               if ((this.serverName !== this.server.name || this.serverStatus !== this.server.status) && !this.changesSaved) {
+                  return confirm('Discard changes?');
+               } else {
+                  return true;
+               }
+               // console.log('edit-server.component: canDeactivate()');
+               // return false;
+            }
+         ```
+      - use static or dynamic (retrieved by resolver) data from router
+         - app-routing.module.ts
+         ```TS
+         { path: 'servers', 
+            // canActivate: [AuthGuard], // AuthGuard works for servers path and all its children
+            canActivateChild: [AuthGuard],  // AuthGuard works for servers children paths only
+            component: ServersComponent, 
+            children: [
+            { path: ':id', component: ServerComponent, resolve: {server: ServerResolver} }, // resolver works before component is loaded and stores in this case <Server> in data['server'] - the same data object as used for static data below
+            { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] } // CanDeactivateGuard implements CanDeactivate interface to decide if a route can be deactivated - navigated away from
+            ] 
+         },
+         // { path: 'not-found', component: PageNotFoundComponent },
+         { path: 'not-found', component: ErrorComponent, data: {message: 'Error: page not found!!!'} },  // static data passed by router - to use in component; e.g. use 1 component with different paths and individual data
+         ```
+         - server-resolver.service.ts
+         ```TS
+         import { Resolve, ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
+         import { Observable } from "rxjs";
+         import { ServersService } from "../servers.service";
+         import { Injectable } from "@angular/core";
+
+         interface Server {  // this interface should be in separate file
+            id: number,
+            name: string,
+            status: string
+         }
+
+         @Injectable()   // cause we are injecting service into service
+         export class ServerResolver implements Resolve<Server> {
+            constructor(private serverService: ServersService){}
+            resolve(
+               route: ActivatedRouteSnapshot,
+               state: RouterStateSnapshot
+            ): Observable<Server> | Promise<Server> | Server {
+               return this.serverService.getServer(parseInt(route.params['id']));  // here data required = server is instantly accesible, but reslove can be used to fetch something before loading the route
+            }
+         }
+         ```
+         - server.component.ts
+         ```TS
+         this.route.data.subscribe(
+            (data: Data) => {
+            this.server = data.server;
+            }
+         )
+         ```
+
+      - routing in old browsers or when server cannot set up index.html as a 404 page
+         - app-routing.module.ts
+         ```TS
+         @NgModule({
+            imports: [
+               RouterModule.forRoot(appRoutes)
+               // RouterModule.forRoot(appRoutes, {useHash: true}) // for angular route to work on real server we need to set its 404 page to index.html (so angular can handle everything)
+            ],                                                      // if that is not possible or for old browsers 'useHash' setting adds '#' after root path to deal with that 
+            exports: [RouterModule]
+         })
+         ```
