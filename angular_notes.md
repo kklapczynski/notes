@@ -628,3 +628,5 @@ Used for communication between components. Proper use by:
             exports: [RouterModule]
          })
          ```
+   - ### NOTES to ROUTING
+      - watch < a href="#" ...> in elements with attached [routerLink], cause it overwrites path setting with '#'
