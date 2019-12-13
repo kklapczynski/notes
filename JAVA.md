@@ -150,3 +150,86 @@ int[] copiedLuckyNumbers = Arrays.copyOf(luckyNumbers, luckyNumbers.length);
 - __abstract__  - to declare method without implementation - it will be provided in subclasses
 ```JAVA public abstract String getDescription();```
 - class with abstract methods must be declared as well as abstract
+```JAVA public abstract class Person```
+- abstract class can have normal fields, constructors and methods, but cannot be instantiated
+(https://learning.oreilly.com/videos/core-java-11/9780135160053/9780135160053-CJ92_01_05_03)
+- __protected__ field - accessible for subclasses, any method from any subclass can access it, but only in subclass instances (instead of calling ```JAVA super.methodInSuperClass()```); danger is that protected field cannot be removed, cause some subclasses using it might stop to work. Generally not good to use with fields, but sometimes __protected__ methods are useful
+
+### Object class and its methods
+- https://learning.oreilly.com/videos/core-java-11/9780135160053/9780135160053-CJ92_01_05_04
+- https://github.com/kklapczynski/JAVA_fundamentals_examples/tree/master/corejava/v1ch05/equals
+- created classes might need to have:
+    - a way to compare its instances - need to overwrite __equals__ method
+    - a way to produce hashCode of them - need to overwrite __hashCode__ method (overwrite _hashCode_ method whenever you overwrite _equals_, if objects are equal their hashcodes must be equal as well): if equals method was comparing 3 fields: name, salary, hireDay, then those need to be in hashcode method:
+    ```JAVA
+        public class Employee {
+            ...
+            public int hashCode() {
+                return Objects.hash(name, salary, hireDay);
+            }
+        }
+    ```
+    - a way to return string representation of an object - use __toString__ method (used for debugging for example)
+    ```JAVA
+        public String toString() {
+            return getClass().getName()
+                + "[name=" + name + ", salary-" + salary + "]";
+        }
+    ```
+
+
+- everything apart from primitives is an instance of object class
+- __Objects.equals(field, otherField)__ is null safe
+- to compare class use __getClass()__ ```JAVA if(getClass() != otherObject.getClass()) return false;```
+- to compare instances use __instanceOf__ ```JAVA if(!(otherObject instanceOf Person)) return false;```
+
+### ArrayList
+- https://learning.oreilly.com/videos/core-java-11/9780135160053/9780135160053-CJ92_01_05_05
+- used a lot cause Array length is fixed
+- is array of objects that can grow and shrink
+- it's generic: type parameter specifies element type
+```JAVA ArrayList<Employee> staff = new ArrayList<>();```
+- __add()__ method to add object at the end ```JAVA staff.add(new Employee(".."));```
+- __size()__ returns current length
+- __get__ and __set__ ```JAVA Employee e = staff.get(i); staff.set(i, tony);```
+- __"for each"__ loop ```JAVA for (Employee e : staff) System.out.println(e);```
+- cannot hold int values, but __Integer__ object wraps int and conversion is automatic
+```JAVA
+    ArrayList<Integer> list = new ArrayList<>();
+    list.add(3);
+    int n = list.get(i);
+    Integer n = 1000;
+    n++;    // as well works cause of this auto conversion = "boxing + unboxing" ("wrapping + unwrapping")
+    Integer a = n + 1;
+    Integer b = n + 1;
+    return a == b;  // returns false cause a and b are differetn objects
+    // need to use .equals
+    // int cannot be null, but Integer can, so below error may occur
+    Integer n = null;
+    System.out.println(n+1); // Null pointer exeption
+```
+### Methods with variable number of parameters
+- use "..." in method definition - puts separate args into array that can be itarated  with for loop
+```JAVA
+    public static double max(double... values) {
+        double largets = Double.NEGATIVE_INFINITY;
+        for(double v : values) if (v > largest) largest = v;
+        return largest;
+    }
+
+    double d = max(1,2,3,44,5,7) // returns 44
+```
+### Enumeration classes
+- it defines all instances
+```JAVA
+    public enum Size { SMALL, MEDIUM, LARGE, EXTRA_LARGE };
+```
+- methods:
+    - __toString__ - returns string "SMALL", ...
+    - __ordinal__  - returns position 0, ...
+    - static methods:
+        - __Enum.valueOf(Size.class, "SMALL")__ - returns Size.SMALL
+        - Size.values() yields all values in an array of type Size[]
+
+
+
