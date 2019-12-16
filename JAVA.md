@@ -231,5 +231,22 @@ int[] copiedLuckyNumbers = Arrays.copyOf(luckyNumbers, luckyNumbers.length);
         - __Enum.valueOf(Size.class, "SMALL")__ - returns Size.SMALL
         - Size.values() yields all values in an array of type Size[]
 
+### Reflection
+- https://github.com/kklapczynski/JAVA_fundamentals_examples/tree/master/corejava/v1ch05/reflection
+- https://github.com/kklapczynski/JAVA_fundamentals_examples/tree/master/corejava/v1ch05/arrays
+- https://learning.oreilly.com/videos/core-java-11/9780135160053/9780135160053-CJ92_01_05_06
+- lets analyze and manipulate Java objects at runtime
+- can be used to create generic Array code: example create Array of the same type as given, but twice longer
+```JAVA
+public static Object goodCopyOf(Object a, int newLength) {
+    Class cl = a.getClass();
+    if(!cl.isArray()) return null;
+    Class componentType = cl.getComponentType();
+    int length = Array.getLength(a);
+    Object newArray = Array.newInstance(componentType, newLength);
+    System.arraycopy(a, 0, newArray, 0, Math.min(length, newLength));
+    return newArray;
+}
+```
 
 
