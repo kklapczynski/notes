@@ -630,3 +630,12 @@ Used for communication between components. Proper use by:
          ```
    - ### NOTES to ROUTING
       - watch < a href="#" ...> in elements with attached [routerLink], cause it overwrites path setting with '#'
+
+## OBSERVABLES
+   - https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/14466306#questions/8300194
+   - use __rxjs__ : 
+      - https://rxjs-dev.firebaseapp.com/
+      - https://academind.com/learn/javascript/understanding-rxjs/
+   - use Subject of rxjs insead of EventEmitter of Angular for intercomponent comunication
+      - .next() replaces .emit()
+      - NEED to UNSUBSCRIBE by hand opposite to EventEmitter, in which Angular handles unsubscription
