@@ -249,4 +249,15 @@ public static Object goodCopyOf(Object a, int newLength) {
 }
 ```
 
+### Design Hints for INHERITANCE
+- Place common operations and fields in the superclass.
+- Don't use protected fields.
+- Use inheritance to model the "is-a" relationship like: Manager is a Employee.
+- Don't use inheritance __unless all__ inherited methods make sense.
+- Don't change the expected behavior when you override a method.
+- Use polymorphism, not a type information:
+    - instead of: ```JAVA if(x is of type1) action1(x); else if (x is of type2) action2(x)```
+    - reorganize code by defining one method in superclass, that will be implemented differently using polymorphism: ```JAVA x.action();```.
+- Don't overuse reflection.
+
 
