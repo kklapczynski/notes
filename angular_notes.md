@@ -639,3 +639,31 @@ Used for communication between components. Proper use by:
    - use Subject of rxjs insead of EventEmitter of Angular for intercomponent comunication
       - .next() replaces .emit()
       - NEED to UNSUBSCRIBE by hand opposite to EventEmitter, in which Angular handles unsubscription
+
+## FORMS
+   ### Template driven forms
+   - forms written in html with directives
+   - add __ngModel__ directive and __name__ attribute to controls of a form to register them
+   - add __(ngSubmit)__ in <form> tag for Angular to take over default submit of a form
+      ```html
+         <form (ngSubmit)="onSubmit(f)" #f="ngForm">
+      ```
+   - tie __ngForm__ to the form to get NgForm object (automatically created Angular's version of the form)
+   - get access to the NgForm object at any time (not only when submitting as above) by using __@ViewChild__
+      ```TS
+         @ViewChild('f', {static: false}) signupForm: NgForm;
+      ```
+   - Angular __validators__: https://angular.io/api/forms/Validators
+   - add __#name="ngModel" to control tag to get access to its properties
+      ```HTML
+         <input type="email" id="email" class="form-control"
+              ngModel
+              name="email"
+              required
+              email
+              #email="ngModel"
+            >
+            <span class="help-block" *ngIf="!email.valid && email.touched">Please give a valid email!</span>
+      ```
+   - 
+      
