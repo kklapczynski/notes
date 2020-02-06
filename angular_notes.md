@@ -665,5 +665,12 @@ Used for communication between components. Proper use by:
             >
             <span class="help-block" *ngIf="!email.valid && email.touched">Please give a valid email!</span>
       ```
-   - 
-      
+   - reset a form: values and ng-classes like ng-touched with __this.signupForm.reset();__
+
+## HTTP
+   - .post() or any other http method doesn't excute anything until ther is a subscription to it - angular sends only if somewhere response is awaited
+   - BEST PRACTICE: http handling in SERVICES and subscription + results handling in COMPONENT https://github.com/kklapczynski/-Udemy_Angular8_The-Complete-Guide__Http
+   - you can control headers, response type, params and other with object passed as an arg to http method after URL
+   - INTERCEPTOR: used to run some code before all (or filtered with if or other statement) http requests are send out of the app - used for AUTHORIZATION for example
+   - INTERCEPTOR can change the URL of a request by replacing it with .clone method like : ({ headers: req.headers.append('Auth', 'xyz')})
+   
