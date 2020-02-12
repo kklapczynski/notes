@@ -666,6 +666,7 @@ Used for communication between components. Proper use by:
             <span class="help-block" *ngIf="!email.valid && email.touched">Please give a valid email!</span>
       ```
    - reset a form: values and ng-classes like ng-touched with __this.signupForm.reset();__
+   - buttons in froms need to have type set: type="submit" for button that submitts the form and __ALL OTHER buttons need to have__ type="button" to prevent them from submitting a from
 
 ## HTTP
    - .post() or any other http method doesn't excute anything until ther is a subscription to it - angular sends only if somewhere response is awaited
@@ -673,4 +674,18 @@ Used for communication between components. Proper use by:
    - you can control headers, response type, params and other with object passed as an arg to http method after URL
    - INTERCEPTOR: used to run some code before all (or filtered with if or other statement) http requests are send out of the app - used for AUTHORIZATION for example
    - INTERCEPTOR can change the URL of a request by replacing it with .clone method like : ({ headers: req.headers.append('Auth', 'xyz')})
+
+# ngRx
+   - state management pattern
+   - ngRx is Angular's implementation of Redux (state pattern for React)
+   - install its core functions: ```npm i --save @ngrx/store```
+   - services and component receive state only from Store (Application state)
+   - actions from components and services are send to REDUCERS
+   - Reducers copy current state and change this copy with received actions then they return new state
+   - reduced (new) state is send to STORE and overwrites old state
+   - need to define reducers and actions : https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/14466542#overview
+   - add 'app's store' ```import { StoreModule } from '@ngrx/store';```  in app.module.ts with listing of reducers - parts of store : https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/14466552#overview
+   - dispatch action (with or without) ```this.store.dispatch(new ShoppingListActions.AddIngredient(newIngredient));```: https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/14466556#overview
+   - add another action to reducer - need to use TypeScript feature: 'type' def.: ```export type ShoppingListActions = AddIngredient | AddIngredients;``` in actions.ts file : https://www.udemy.com/course/the-complete-guide-to-angular-2/learn/lecture/14466558#overview
    
+
